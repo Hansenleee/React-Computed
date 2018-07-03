@@ -5,15 +5,6 @@
 import depend from './utils/depend';
 
 class Computed {
-  // 记录原始的computed值
-  _computedParams = null;
-  // 记录原始的作用域
-  _this = null;
-  // computed的计算值
-  computed = {}
-  // 组件Component下的computed值，进行definePropery
-  // 可以算是组件的computed一个拷贝
-  componetComputed = {}
   /**
    * 构造器
    */
@@ -22,9 +13,15 @@ class Computed {
     if (typeof params !== 'object') {
       return;
     }
+    // 记录原始的computed值
     this._computedParams = params;
+    // 记录原始的作用域
     this._this = _this;
-    // 设置组件的computed
+    // computed的计算值
+    this.computed = {} = {}
+    // 组件Component下的computed值，进行definePropery
+    // 可以算是组件的computed一个拷贝
+    this.componetComputed = {}
     this._this.computed = this.componetComputed;
     this.createComputed();
   }
