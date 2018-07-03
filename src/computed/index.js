@@ -9,15 +9,13 @@ class ReactComputed extends Component {
    * @param {Object} _this - 当前组件的实例
    */
   createComputed(params, _this) {
-    this._computed = new Computed(params, _this || this)
+    this._computed = new Computed(params, _this || this);
 
-    return this._computed.getComputed();
+    return this._computed.componetComputed;
   }
 
-  componentWillUpdate(nextProps, nextState) {
-    this._computed.observerState(nextState);
-
-    this.computed = this._computed.getComputed();
+  componentDidUpdate(preProps, preState) {
+    this._computed.observerState(preState);
   }
 }
 

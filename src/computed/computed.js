@@ -1,14 +1,18 @@
+/**
+ * Computed入口类，主要的功能入口
+ */
+
+import depend from './utils/depend';
+
 class Computed {
   // 记录原始的computed值
   _computedParams = null;
   // 记录原始的作用域
   _this = null;
-  // computed的值
+  // computed的计算值
   computed = {}
-  // 依赖映射关系
-  dependMap = {}
-  // 同一时间只能有一个在计算,表示正在计算的computed对象下的key
-  onCalcuatingComputedName = ''
+  // 组件Component下的computed值，进行definePropery
+  componetComputed = {}
   /**
    * 构造器
    */
@@ -19,6 +23,8 @@ class Computed {
     }
     this._computedParams = params;
     this._this = _this;
+    // 设置组件的computed
+    this._this.computed = this.componetComputed;
     this.createComputed();
   }
 
@@ -28,120 +34,71 @@ class Computed {
    * @param {Object} _this - 当前组件的实例
    */
   createComputed() {
-    const computed = {};
-    // 监听state
-    this.defineState();
-    // 遍历
-    Object.entries(this._computedParams).forEach(([key, value]) => {
-      this.onCalcuatingComputedName = key;
-      computed[key] = typeof value === 'function' ? value.call(this._this) : value;
-    });
-
-    this.computed = computed;
+    // 初始化依赖的关系
+    depend.initDepend(this);
+    // 计算computed初始值
+    this.triggerComputed(Object.keys(this._computedParams));
   }
 
   /**
    * 监听state变化
    */
-  observerState(nextState) {
+  observerState(preState) {
     const state = this._this.state;
-    const dependMap = this.dependMap;
+    const dependMap = depend.getDepend();
     const computedList = [];
     const needRecalculateStates = [];
 
-    Object.entries(nextState).forEach(([key, nextValue]) => {
-      const nowValue = state[key];
+    // 根据前后修改的state查找出被依赖的computed
+    Object.entries(state).forEach(([key, value]) => {
+      const preValue = preState[key];
 
-      if (nextValue !== nowValue) {
+      if (value !== preValue) {
         // 对应的state发生改变，查找依赖当前state的computed
-        const computeds = dependMap[key];
+        const computedsfromState = dependMap.dependOnState[key]
         // computed依赖的state改变后，触发computed重新计算
-        computedList.push(computeds);
+        if (!!computedsfromState) {
+          computedList.push(computedsfromState);
+        }
       }
     });
 
     // 合并去除重复的。因为一个computed可能依赖多多个state、重新计算时，只需要计算一次就可
     computedList.forEach((keys) => {
-
       keys.forEach((key) => {
-
         if (needRecalculateStates.indexOf(key) === -1) {
           needRecalculateStates.push(key);
         }
       })
     })
+
     // 重新计算
-    this.triggerComputed(needRecalculateStates).then(() => {
+    if (needRecalculateStates.length > 0) {
+      this.triggerComputed(needRecalculateStates);
+      // 赋值
+      // this.setComputedToComponent();
       // 强制重新渲染render
       this._this.forceUpdate();
-    })
-  }
-
-  /**
-   * 监听state
-   */
-  defineState() {
-    const state = this._this.state;
-
-    Object.entries(state).forEach(([key, value]) => {
-      // 监听下
-      Object.defineProperty(state, key, {
-        get: () => {
-          const computedKey = this.onCalcuatingComputedName
-          
-          if (computedKey) {
-            this.addDepend(key, computedKey);
-          }
-
-          return value;
-        },
-      })
-    });
-  }
-
-  /**
-   * 加入依赖
-   */
-  addDepend(stateKey, computedKey) {
-    const dependMap = this.dependMap;
-
-    if (dependMap[stateKey]) {
-      if (dependMap[stateKey].indexOf(computedKey) === -1) {
-        dependMap[stateKey].push(computedKey);
-      }
-    } else {
-      dependMap[stateKey] = [computedKey];
     }
   }
 
   /**
-   * 触发computed重新计算
+   * 计算computed值
+   * @param {Array} computeds - computed的key的数组
    */
   triggerComputed(computeds) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.calculate(computeds);
-        resolve();
-      }, 50);
-    })
-  }
-
-  /**
-   * 计算computed值
-   */
-  calculate(computeds) {
     computeds.forEach((key) => {
       const value = this._computedParams[key];
 
-      this.computed[key] = typeof value === 'function' ? value.call(this._this) : value;
+      // 设置depend的正在计算的值
+      depend.setOnCalcuatingCopmuted(key);
+      // 计算,这里其实不需要对this.componetComputed进行赋值
+      // 但是为了触发设置在this.componetComputed上的set（来判断依赖的更新），必须赋值一次，
+      // 这里需要找到好方法来解决目前this.componetComputed和this.computed混乱的关系
+      this.componetComputed[key] = this.computed[key] = typeof value === 'function' ? value.call(this._this) : value;
+      // 置空
+      depend.setOnCalcuatingCopmuted('');
     });
-  }
-
-  /**
-   * 获取computed
-   */
-  getComputed() {
-    return this.computed;
   }
 }
 

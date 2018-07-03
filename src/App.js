@@ -5,26 +5,31 @@ import Computed from './computed/index';
 
 class App extends Computed {
   state = {
-    num: 1,
+    num: 0,
   };
   computed = this.createComputed({
+    nums() {
+      return this.state.num || 0
+    },
     numAdd() {
-      return this.state.num + 1
-    }
+      return this.computed.nums + 1
+    },
   });
 
   componentDidMount() {
     setTimeout(() => {
-      this.setState({ num: 2})
+      this.setState({ num: 1 })
     }, 1000);
   }
 
   render() {
+    const computed = this.computed;
     return (
       <div className="App">
         <header className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">{this.computed.numAdd}</h1>
+          <h1 className="App-title">numAdd: {computed.numAdd}  nums: {computed.nums}</h1>
+          <p>{this.state.num}</p>
         </header>
       </div>
     );
