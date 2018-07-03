@@ -10,7 +10,7 @@ class ReactComputed extends Component {
    */
   createComputed(params, _this) {
     this._computed = new Computed(params, _this || this);
-
+    // 返回避免this.computed为undefined
     return this._computed.componetComputed;
   }
 

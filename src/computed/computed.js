@@ -12,6 +12,7 @@ class Computed {
   // computed的计算值
   computed = {}
   // 组件Component下的computed值，进行definePropery
+  // 可以算是组件的computed一个拷贝
   componetComputed = {}
   /**
    * 构造器

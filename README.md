@@ -15,11 +15,11 @@ class App extends Computed {
     num: 1,
   }
   // computed初始,类似Vue.computed
-  computed: {
+  computed = this.createComputed({
     numAdd() {
       return this.state.num + 1;
     },
-  }
+  })
   ...
 }
 
@@ -35,7 +35,6 @@ import React from 'react';
 import Computed from './computed/computed';
 
 class App extends React.Component {
-  // 注意这里state不能在constructor初始
   state = {
     num: 1,
   };
@@ -45,7 +44,11 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     // 初始化
-    this._computed = new Computed(params, this);
+    this._computed = new Computed({
+      numAdd() {
+        return this.state.num + 1;
+      },
+    }, this);
   }
 
   componentDidUpdate(preProps, preState) {
